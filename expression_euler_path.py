@@ -1,6 +1,6 @@
 import queue
 import networkx as nx
-
+from invertation import *
 
 def precedence(operator):
     if operator == '+':
@@ -12,7 +12,7 @@ def precedence(operator):
 
 def apply_operator(operand1, operand2, operator, q):
     expression = str(operand1) + str(operator) + str(operand2)
-    q.append(expression)
+    #q.append(expression)
     if operator == '+':
         return str(operand1) + str(operator) + str(operand2)
     else: return str(operand1) + str(operator) + str(operand2)
@@ -46,6 +46,7 @@ def evaluate_expression(expression, q):
                 operand2 = operand_stack.pop()
                 operand1 = operand_stack.pop()
                 result = apply_operator(operand1, operand2, operator, q)
+                q.append(result)
                 operand_stack.append(result)
             operator_stack.append(token)
             index += 1
@@ -58,6 +59,7 @@ def evaluate_expression(expression, q):
                 operand2 = operand_stack.pop()
                 operand1 = operand_stack.pop()
                 result = apply_operator(operand1, operand2, operator, q)
+                q.append(result)
                 operand_stack.append(result)
             operator_stack.pop()  # pop the '('
             index += 1
@@ -70,6 +72,7 @@ def evaluate_expression(expression, q):
         operand2 = operand_stack.pop()
         operand1 = operand_stack.pop()
         result = apply_operator(operand1, operand2, operator, q)
+        q.append(result)
         operand_stack.append(result)
 
     return operand_stack.pop()
@@ -105,7 +108,99 @@ def intersection_expressions(expression1, expression2):
 #    if not result: return 0
     return result
 
-
+def check_serial_connected(g, token, inter_arr):
+    if len(inter_arr) == 0:
+        return True
+    arr1 = [0] * len(inter_arr)
+    arr2 = [0] * len(inter_arr)
+    i = 0
+    j = 0
+    while(1):
+        if inter_arr[i] == 0:
+            i += 1
+            break
+        arr1[i] = inter_arr[i]
+        i += 1
+    while i < len(inter_arr):
+        if inter_arr[i] == 0:
+            break;
+        arr2[j] = inter_arr[i]
+        i += 1
+        j += 1
+    i = 0
+    j = 0
+    if arr2[0] == 0:
+        n1_s = token + 'S'
+        n1_d = token + 'D'
+        while i < len(arr1):
+            n2_s = arr1[i] + 'S'
+            n2_d = arr1[i] + 'D'
+            if(n1_s, n2_d) in g.edges():
+                return False
+            if(n1_d, n2_s) in g.edges():
+                return False
+            i += 1
+        return True
+    else:
+        while i < len(arr1):
+            if arr1[i] == 0: break
+            n1_s = arr1[i] + 'S'
+            n1_d = arr1[i] + 'D'
+            j = 0
+            while j < len(arr2):
+                if arr2[j] == 0:
+                    break
+                n2_s = arr2[j] + 'S'
+                n2_d = arr2[j] + 'D'
+                if (n1_s, n2_d) in g.edges():
+                    return False
+                if(n1_d, n2_s) in g.edges():
+                    return False
+                j += 1
+            i += 1
+        return True
+    
+def checking_parallel_connected(g, k, inter_arr):
+    if len(inter_arr) == 0:
+        return True
+    arr1 = [0] * len(inter_arr)
+    arr2 = [0] * len(inter_arr)
+    i = 0
+    j = 0
+    while(1):
+        if inter_arr[i] == 0:
+            i += 1
+            break
+        arr1[i] = inter_arr[i]
+        i += 1
+    while i < len(inter_arr):
+        if inter_arr[i] == 0:
+            arr2[j] = inter_arr[i]
+        i += 1
+        j += 1
+    i = 0
+    j = 0
+    if arr2[0] == 0:
+        while i < len(arr1) - 1:
+            n1 = arr1[i] + k
+            j = i + 1
+            while j < len(arr1):
+                n2 = arr1[j] + k
+                if(n1, n2) in g.edges():
+                    return False
+                j += 1
+        return True
+    else:
+        while i < len(arr1):
+            n1 = arr1[i] + k
+            j = 0
+            while j < len(arr2):
+                n2 = arr2[j] + k
+                if (n1, n2) in g.edges():
+                    return False
+                j += 1
+            i += 1
+        return True
 def create_node(g, node):
     node1 = node + 'S'
     node2 = node + 'D'
@@ -123,28 +218,43 @@ def add_edge_parallel_1(g, node1, node2):
     g.add_edge(n2, n4)
     
 
-def add_edge_serial_1(g, node1, node2):
+def add_edge_serial_1(g, node1, node2, inter_arr, mode):
     n1 = node1 + 'S'
     n2 = node1 + 'D'
     n3 = node2 + 'S'
     n4 = node2 + 'D'
-    g.add_edge(n3, n2)
-    return
+    if mode == 0:
+        g.add_edge(n3, n2)
+    elif mode == 1:
+        arr = [node1, 0, node2, 0];
+        if check_serial_connected(g, ' ',arr) == True:
+            g.add_edge(n3, n2)
 
-def add_edge_serial_2(g, node, inter_arr):
+def add_edge_serial_2(g, node, inter_arr, mode):
     n1 = node + 'S'
     n2 = node + 'D'
     i = j = 0
     node_connect1, node_degree1, i = lowest_degree_arr_node(g, 'D', i, inter_arr, '')
-    node_connect2, node_degree2, j = lowest_degree_arr_node(g, 'D', j, inter_arr, node_connect1)
-    g.add_edge(n1, node_connect1)
-    g.add_edge(n1, node_connect2)
+    node_connect2, node_degree2, j = lowest_degree_arr_node(g, 'S', j, inter_arr, '')
+    if mode == 0:
+        g.add_edge(n1, node_connect1)
+    elif mode == 1:
+        if check_serial_connected(g, node, inter_arr) == True:
+            g.add_edge(n2, node_connect2)
 
-def add_edge_parallel_2(g, node):
+
+
+def add_edge_parallel_2(g, node, inter_arr):
     n1 = node + 'S'
     n2 = node + 'D'
-    node1 = lowest_degree(g, 'S', node, node)
-    node2 = lowest_degree(g, 'D', node, node)
+    outside_node = ''
+    for n in g.nodes():
+        n = n[0]
+        if n not in inter_arr and n != node:
+            outside_node = n
+            break
+    node1 = lowest_degree(g, 'S', node, node, outside_node)
+    node2 = lowest_degree(g, 'D', node, node, outside_node)
     node1_degree = g.degree(node1)
     node2_degree = g.degree(node2)
     if node1_degree < node2_degree:
@@ -155,11 +265,11 @@ def add_edge_parallel_2(g, node):
         g.add_edge(n2, node2)
     if s == 1:
         node1 = node1[0]
-        node_connect = lowest_degree(g, 'D', node, node1)
+        node_connect = lowest_degree(g, 'D', node, node1, outside_node)
         g.add_edge(n2, node_connect)
     elif s == 2:
         node2 = node2[0]
-        node_connect = lowest_degree(g, 'S', node, node2)
+        node_connect = lowest_degree(g, 'S', node, node2, outside_node)
         g.add_edge(n1, node_connect)
 
 def add_edge_parallel_3(g, inter_arr):
@@ -187,30 +297,16 @@ def add_edge_parallel_3(g, inter_arr):
         node_connect, node_degree, t1 = lowest_degree_arr_node(g, 'D', t1, inter_arr, except_node)
         g.add_edge(n3, node_connect)
     return
-def add_edge_serial_3(g, inter_arr):
+def add_edge_serial_3(g, inter_arr, mode):
     i = 0
-    min_degree1 = 100
-    min_degree2 = 100
-    while 1:
-        if inter_arr[i] == 0:
-            i += 1
-            break
-        n1_degree = g.degree(inter_arr[i] + 'S')
-        n1 = inter_arr[i] + 'S'
-        if n1_degree < min_degree1:
-            min_node1 = n1
-            min_degree1 = n1_degree
-        i += 1
-    if i < len(inter_arr):
-        while 1:
-            if inter_arr[i] == 0: break
-            n2_degree = g.degree(inter_arr[i] + 'D')
-            n2 = inter_arr[i] + 'D'
-            if n2_degree < min_degree2:
-                min_node2 = n2
-                min_degree2 = n2_degree
-            i += 1
-        g.add_edge(min_node1, min_node2)
+    n1, n1_degree, i = lowest_degree_arr_node(g, 'S', i, inter_arr, '')
+    n2 , n2_degree, i = lowest_degree_arr_node(g, 'D', i, inter_arr, n1)
+    if mode == 0:
+        g.add_edge(n1, n2)
+    elif mode == 1:
+        if check_serial_connected(g, '', inter_arr) == True:
+           g.add_edge(n1, n2) 
+    
 
 def lowest_degree_arr_node(g, k, i, inter_arr, except_node):
     t = i
@@ -228,7 +324,7 @@ def lowest_degree_arr_node(g, k, i, inter_arr, except_node):
         t += 1
     return min_node1, min_degree1, t
 
-def lowest_degree(g, k, except_node1, except_node2):
+def lowest_degree(g, k, except_node1, except_node2, except_node3):
     degrees = dict(g.degree())
     if except_node1 != '':
         degrees.pop(except_node1 + 'S', None)
@@ -236,11 +332,15 @@ def lowest_degree(g, k, except_node1, except_node2):
     if except_node2 != '':
         degrees.pop(except_node2 + 'S', None)
         degrees.pop(except_node2 + 'D', None)
+    if except_node3 != '':
+        degrees.pop(except_node3 + 'S', None)
+        degrees.pop(except_node3 + 'D', None)
     filtered_degrees = {node: degree for node, degree in degrees.items() if node[-1] == k}
     lowest_degree_node = min(filtered_degrees, key=degrees.get)
     return lowest_degree_node
 
-def create_graph(g, q, i, expression):
+def create_graph(g, q, i, expression, mode):
+    end_node = ''
     inter_arr = []
     t = i - 1
     expre = expression
@@ -273,7 +373,7 @@ def create_graph(g, q, i, expression):
         if operator == 1:
             add_edge_parallel_1(g, node1, node2)
         else:
-            add_edge_serial_1(g, node1, node2)
+            add_edge_serial_1(g, node1, node2, inter_arr, mode)
 
     else:
         node = ''
@@ -286,25 +386,43 @@ def create_graph(g, q, i, expression):
                 create_node(g, token)
         if operator == 1:
             if len(node) > 0:
-                add_edge_parallel_2(g, node)
+                add_edge_parallel_2(g, node, inter_arr)
             else:
                 add_edge_parallel_3(g, inter_arr)
         else:
             if len(node):
-                add_edge_serial_2(g, node, inter_arr)
+                add_edge_serial_2(g, node, inter_arr, mode)
             else:
-                add_edge_serial_3(g, inter_arr)
-    return g
+                add_edge_serial_3(g, inter_arr, mode)
+        end_node = node
+    return g, end_node
 
-def initial_graph(g, expression):
+def create_nmos(g, expression):
     q = []
+    end_node = ''
     evaluate_expression(expression, q)
     i = 0
     while i < len(q):
-        create_graph(g, q, i, q[i])
+        g, end_node = create_graph(g, q, i, q[i], 0)
+        i += 1
+    return g, end_node
+
+def create_pmos(g, expression, euler_path):
+    q = []
+    evaluate_expression_inv(expression, q)
+    i = 0
+    while i < len(euler_path):
+        n1 = euler_path[i]
+        g.add_node(n1)
+        if i != 0:
+            n2 = euler_path[i - 1]
+            g.add_edge(n1, n2)
+        i += 1
+    i = 0
+    while i < len(q):
+        create_graph(g, q, i, q[i], 1)
         i += 1
     return g
-
 
 def is_valid_next_node(v, path, G):
     # Kiểm tra xem đỉnh v đã được thêm vào path chưa
@@ -330,6 +448,17 @@ def is_valid_next_node(v, path, G):
     return False
 
 
+def hamiltonian_dfs_endnode(G, start, end, path=[]):
+    path = path + [start]
+    if len(path) == len(G.nodes()):
+        return path
+    for v in G.neighbors(start):
+        if is_valid_next_node(v, path, G):
+            new_path = hamiltonian_dfs_endnode(G, v, end, path)
+            if new_path:
+                return new_path
+    return None
+
 def hamiltonian_dfs(G, start, path=[]):
     path = path + [start]
     if len(path) == len(G.nodes()):
@@ -341,10 +470,16 @@ def hamiltonian_dfs(G, start, path=[]):
                 return new_path
     return None
 
-def find_hamilton_path(g):
+def find_hamilton_path(g, end_node):
     path = []
     for node in g.nodes():
-        path = hamiltonian_dfs(g, node)
+        if node[1] == 'S': continue
+        if end_node != '':
+            path = hamiltonian_dfs_endnode(g, node, end_node)
+            if path:
+                if (path[0][0] != end_node and path[-1][0] != end_node):
+                    path = []
+        else:  path = hamiltonian_dfs(g, node)
         if path :
             break
         path = []
@@ -352,8 +487,8 @@ def find_hamilton_path(g):
         return path
     else: return None
 
-def euler_path(g):
-    euler_path_nmos = find_hamilton_path(g)
+def euler_path(g, end_node):
+    euler_path_nmos = find_hamilton_path(g, end_node)
     if not euler_path_nmos:
         return None
     euler_path_pmos = [None] * len(euler_path_nmos)
@@ -370,14 +505,83 @@ def euler_path(g):
         i += 2
     return euler_path_nmos, euler_path_pmos
 
-# Test the function
-#'''
-g = nx.Graph()
-#expression = input()
-expression = "A*(B+C)+D"
-g = initial_graph(g, expression)
-euler_path_nmos, euler_path_pmos = euler_path(g)
-print("NMOS: ", euler_path_nmos)
-print("PMOS: ", euler_path_pmos)
+def filter_edge_pmos(g, arr1, arr2, euler_path):
+    i = 0
+    check_serial = []
+    check_parallel = []
+    while i < len(euler_path):
+        n1 = euler_path[i]
+        if i != 0:
+            n2 = euler_path[i - 1]
+            if n1[0] != n2[0] and n1[1] != n2[1]:
+                check_serial.append(n1[0] + n2[0])
+                check_serial.append(n2[0] + n1[0])
+            if n1[0] != n2[0] and n1[1] == n2[1]:
+                check_parallel.append(n1[0] + n2[0] + n1[1])
+                check_parallel.append(n2[0] + n1[0] + n1[1])
+        i += 1
+    for edge in g.edges():
+        n1 = edge[0][0]
+        n2 = edge[1][0]
+        if n1 == n2:
+            continue
+        n3 = edge[0][1]
+        n4 = edge[1][1]
+        if n3 != n4:
+            node1 = n1 + n2
+            node2 = n2 + n1
+            if (node1 in arr1 or node2 in arr1) and (node1 not in check_serial or node2 not in check_serial):
+                if (n1 + 'S', n2 + 'D') in g.edges:
+                    g.remove_edge(n1 + 'S', n2 + 'D')
+                if (n1 + 'D', n2 + 'S') in g.edges:
+                    g.remove_edge(n1 + 'D', n2 + 'S')
+        else:
+            node1 = n1 + n2
+            node2 = n2 + n1
+            if(node1 not in arr2 and node2 not in arr2):
+                for n in check_parallel:
+                    if node1 != n[0] + n[1] and node2 != n[0] + n[1]:
+                        if n3 == n[2]:
+                            if(n1 + n[2], n2 + n[2]) in g.edges():
+                                g.remove_edge(n1 + n[2], n2 + n[2])
+    return g
 
+def Create_All(expression):
+    g_nmos = nx.Graph()
+    g_pmos = nx.Graph()
+    node = ''
+    g_nmos, node = create_nmos(g_nmos, expression)
+    serial_array_pmos = []
+    parallel_array_pmos = []
+    for edge in g_nmos.edges():
+        n1 = edge[0][0]
+        n2 = edge[1][0]
+        if n1 == n2:
+            continue
+        n3 = edge[0][1]
+        n4 = edge[1][1]
+        if n3 == n4:
+            serial_array_pmos.append(n1 + n2)
+        else:
+            parallel_array_pmos.append(n1 + n2)
+    euler_path_nmos, euler_path_pmos = euler_path(g_nmos, node)
+    g_pmos = create_pmos(g_pmos, expression, euler_path_pmos)
+    g_pmos = filter_edge_pmos(g_pmos, serial_array_pmos, parallel_array_pmos, euler_path_pmos)
+    return g_nmos, g_pmos, euler_path_nmos, euler_path_pmos
+
+
+# Test the function
+#Test expression:
+#A*(B+C)+D
+#(A+B*C)*D
+#(A+B+C)*D
+#A*B*C+D
+#A*B+C*D
+#(A+B)*(C+D)
+expression = "A*(B+C)+D"
+g_nmos, g_pmos, euler_path_nmos, euler_path_pmos = Create_All(expression)
+print("Euler path NMOS: ", euler_path_nmos)
+print("Euler path PMOS: ", euler_path_nmos)
+print(g_nmos.edges())   #NMOS edges
+print(g_pmos.edges())   #PMOS edges
 
