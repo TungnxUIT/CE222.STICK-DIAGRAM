@@ -546,11 +546,112 @@ def filter_edge_pmos(g, arr1, arr2, euler_path):
                                 g.remove_edge(n1 + n[2], n2 + n[2])
     return g
 
+def checking_edge(g, full_node, char_connected):
+    for node in g.nodes():
+        if node[0] == full_node[0] : continue
+        if char_connected == '':
+            if(full_node, node) in g.edges():
+                return False
+        else:
+            if node[1] == char_connected:
+                if(full_node, node) in g.edges():
+                    return False
+    return True
+
+def find_node_source_and_out(g):
+    source_nodes = []
+    out_nodes = []
+    for edge in g.edges():
+        if edge[0][0] == edge[1][0]: continue
+        if edge[0][1] == edge[1][1]:
+            if edge[0][1] == 'S':
+                source_nodes.append((edge[0][0], edge[1][0]))
+            else:
+                out_nodes.append((edge[0][0], edge[1][0]))
+    if len(source_nodes) > 0:
+        for pair in source_nodes:
+            n1 = pair[0]
+            n2 = pair[1]
+            n1_s = n1 + 'S'
+            n2_s = n2 + 'S'
+            if checking_edge(g, n1_s, 'D') == False or checking_edge(g, n2_s, 'D') == False:
+                source_nodes.remove((n1, n2))
+        if len(source_nodes) > 0:
+            temp1 = []
+            i = 0
+            j = len(source_nodes)
+            while i < j:
+                n1 = source_nodes[0][0]
+                n2 = source_nodes[0][1]
+                n1_s = n1 + 'S'
+                n2_s = n2 + 'S'
+                source_nodes.remove((n1, n2))
+                temp1.append(n1_s)
+                temp1.append(n2_s)
+                i += 1
+            source_nodes = temp1
+    if len(out_nodes) > 0:
+        
+        for pair in out_nodes:
+
+            n1 = pair[0]
+            n2 = pair[1]
+            n1_d = n1 + 'D'
+            n2_d = n2 + 'D'
+            if checking_edge(g, n1_d, 'S') == False or checking_edge(g, n2_d, 'S') == False:
+                out_nodes.remove((n1, n2))
+        if len(out_nodes) > 0:
+            temp2 = []
+            i = 0
+            j = len(out_nodes)
+            while i < j:
+                n1 = out_nodes[0][0]
+                n2 = out_nodes[0][1]
+                n1_s = n1 + 'D'
+                n2_s = n2 + 'D'
+                out_nodes.remove((n1, n2))
+                temp2.append(n1_s)
+                temp2.append(n2_s)
+                i += 1
+            out_nodes = temp2
+    
+    temp1 = []
+    for node in source_nodes:
+        temp1.append(node)
+
+    for node in temp1:
+        if checking_edge(g, node, '') == False:
+            if node in source_nodes:
+                source_nodes.remove(node)
+    if len(source_nodes) == 0:            
+        for node in g.nodes():
+            if node[1] == 'S':
+                if checking_edge(g, node, '') == True:
+                    source_nodes.append(node)
+    if len(source_nodes) == 0: source_nodes = temp1
+
+    temp2 = []
+    for node in out_nodes:
+        temp2.append(node)
+    for node in temp2:
+        if checking_edge(g, node, '') == False:
+            if node in out_nodes:
+                out_nodes.remove(node)
+    if len(out_nodes) == 0:
+        for node in g.nodes():
+            if node[1] == 'D':
+                if checking_edge(g, node, '') == True:
+                    out_nodes.append(node)
+    if len(out_nodes) == 0: out_nodes = temp2
+                
+    return source_nodes, out_nodes
+
 def Create_All(expression):
     g_nmos = nx.Graph()
     g_pmos = nx.Graph()
     node = ''
     g_nmos, node = create_nmos(g_nmos, expression)
+    source_nodes_nmos, out_nodes_nmos = find_node_source_and_out(g_nmos);
     serial_array_pmos = []
     parallel_array_pmos = []
     for edge in g_nmos.edges():
@@ -567,7 +668,8 @@ def Create_All(expression):
     euler_path_nmos, euler_path_pmos = euler_path(g_nmos, node)
     g_pmos = create_pmos(g_pmos, expression, euler_path_pmos)
     g_pmos = filter_edge_pmos(g_pmos, serial_array_pmos, parallel_array_pmos, euler_path_pmos)
-    return g_nmos, g_pmos, euler_path_nmos, euler_path_pmos
+    source_nodes_pmos, out_nodes_pmos = find_node_source_and_out(g_pmos);
+    return g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos
 
 
 # Test the function
@@ -578,10 +680,18 @@ def Create_All(expression):
 #A*B*C+D
 #A*B+C*D
 #(A+B)*(C+D)
-expression = "A*(B+C)+D"
-g_nmos, g_pmos, euler_path_nmos, euler_path_pmos = Create_All(expression)
+expression = "A*B+C*D"
+g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos = Create_All(expression)
 print("Euler path NMOS: ", euler_path_nmos)
-print("Euler path PMOS: ", euler_path_nmos)
-print(g_nmos.edges())   #NMOS edges
-print(g_pmos.edges())   #PMOS edges
+print("Euler path PMOS: ", euler_path_pmos)
+print("NMOS edges: ",g_nmos.edges())   #NMOS edges
+print("pMOS edges: ",g_pmos.edges())   #PMOS edges
+print("Node connect Source NMOS (GND):")
+print(source_nodes_nmos)
+print("Node connect Output NMOS (OUT):")
+print(out_nodes_nmos)
+print("Node connect Source PMOS (VCC):")
+print(source_nodes_pmos)
+print("Node connect Output PMOS (OUT):")
+print(out_nodes_pmos)
 
