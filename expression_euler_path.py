@@ -1,6 +1,4 @@
-import queue
 import networkx as nx
-from invertation import *
 
 def precedence(operator):
     if operator == '+':
@@ -17,18 +15,59 @@ def apply_operator(operand1, operand2, operator, q):
         return str(operand1) + str(operator) + str(operand2)
     else: return str(operand1) + str(operator) + str(operand2)
 
-def count_max_degree(expression):
-    max_count = 0
-    count = 0
-    for char in expression:
-        if char == '(':
-            count = 0
-        elif char == ')':
-            max_count = max(max_count, count)
-            count = 0
-        elif char == '+':
-            count += 1
-    return max(max_count, count) + 2
+def apply_operator_inv(operand1, operand2, operator):
+    expression = str(operand1) + str(operator) + str(operand2)
+    #q.append(expression)
+    if operator == '+':
+        return str(operand1) + '*' + str(operand2)
+    else: return str(operand1) + '+' + str(operand2)
+
+
+def evaluate_expression_inv(expression, q):
+    operand_stack = []
+    operator_stack = []
+    index = 0
+
+    while index < len(expression):
+        token = expression[index]
+        if token.isalpha():
+            operand_stack.append((token))
+            index += 1
+        elif token in '+-*/^':
+            while (len(operator_stack) != 0 and precedence(operator_stack[-1]) >= precedence(token)):
+                operator = operator_stack.pop()
+                operand2 = operand_stack.pop()
+                operand1 = operand_stack.pop()
+                result = apply_operator_inv(operand1, operand2, operator)
+                q.append(result)
+                operand_stack.append(result)
+            operator_stack.append(token)
+            index += 1
+        elif token == '(':
+            operator_stack.append(token)
+            index += 1
+        elif token == ')':
+            while operator_stack[-1] != '(':
+                operator = operator_stack.pop()
+                operand2 = operand_stack.pop()
+                operand1 = operand_stack.pop()
+                result = apply_operator_inv(operand1, operand2, operator)
+                q.append(result)
+                operand_stack.append(result)
+            operator_stack.pop()  
+            index += 1
+        else:
+            index += 1
+
+    while len(operator_stack) != 0:
+        operator = operator_stack.pop()
+        operand2 = operand_stack.pop()
+        operand1 = operand_stack.pop()
+        result = apply_operator_inv(operand1, operand2, operator)
+        q.append(result)
+        operand_stack.append(result)
+
+    return operand_stack.pop()
 
 def evaluate_expression(expression, q):
     operand_stack = []
@@ -61,10 +100,10 @@ def evaluate_expression(expression, q):
                 result = apply_operator(operand1, operand2, operator, q)
                 q.append(result)
                 operand_stack.append(result)
-            operator_stack.pop()  # pop the '('
+            operator_stack.pop()  
             index += 1
         else:
-            # Ignore spaces
+            
             index += 1
 
     while len(operator_stack) != 0:
@@ -238,6 +277,10 @@ def add_edge_serial_2(g, node, inter_arr, mode):
     node_connect2, node_degree2, j = lowest_degree_arr_node(g, 'S', j, inter_arr, '')
     if mode == 0:
         g.add_edge(n1, node_connect1)
+        for node in g.nodes():
+            if node[0] == node_connect1[0]: continue
+            if (node_connect1, node) in g.edges() and node[1] == 'D':
+                g.add_edge(n1, node)
     elif mode == 1:
         if check_serial_connected(g, node, inter_arr) == True:
             g.add_edge(n2, node_connect2)
@@ -680,7 +723,7 @@ def Create_All(expression):
 #A*B*C+D
 #A*B+C*D
 #(A+B)*(C+D)
-expression = "A*B+C*D"
+expression = input()
 g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos = Create_All(expression)
 print("Euler path NMOS: ", euler_path_nmos)
 print("Euler path PMOS: ", euler_path_pmos)
