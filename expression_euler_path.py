@@ -171,7 +171,8 @@ def check_serial_connected(g, token, inter_arr):
     if arr2[0] == 0:
         n1_s = token + 'S'
         n1_d = token + 'D'
-        while i < len(arr1):
+        while i < len(arr1) - 1:
+            if arr1[i] == 0: break
             n2_s = arr1[i] + 'S'
             n2_d = arr1[i] + 'D'
             if(n1_s, n2_d) in g.edges():
@@ -689,6 +690,18 @@ def find_node_source_and_out(g):
                 
     return source_nodes, out_nodes
 
+'''def find_node_source_and_out(g):
+    source_nodes = []
+    out_nodes = []
+    for node in g.nodes():
+        if node[1] == 'S':
+            if checking_edge(g, node, 'D') == True:
+                source_nodes.append(node)
+        else:
+            if checking_edge(g, node, 'S') == True:
+                out_nodes.append(node)
+    return source_nodes, out_nodes'''
+
 def Create_All(expression):
     g_nmos = nx.Graph()
     g_pmos = nx.Graph()
@@ -723,6 +736,7 @@ def Create_All(expression):
 #A*B*C+D
 #A*B+C*D
 #(A+B)*(C+D)
+print("Expression input: ")
 expression = input()
 g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos = Create_All(expression)
 print("Euler path NMOS: ", euler_path_nmos)
