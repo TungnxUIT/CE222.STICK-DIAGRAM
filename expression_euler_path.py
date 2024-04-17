@@ -203,24 +203,24 @@ def check_serial_connected(g, token, inter_arr):
 def checking_parallel_connected(g, k, inter_arr):
     if len(inter_arr) == 0:
         return True
-    arr1 = [0] * len(inter_arr)
-    arr2 = [0] * len(inter_arr)
+    arr1 = []
+    arr2 = []
     i = 0
     j = 0
     while(1):
         if inter_arr[i] == 0:
             i += 1
             break
-        arr1[i] = inter_arr[i]
+        arr1.append(inter_arr[i])
         i += 1
     while i < len(inter_arr):
-        if inter_arr[i] == 0:
-            arr2[j] = inter_arr[i]
+        if inter_arr[i] == 0: break
+        arr2.append(inter_arr[i])
         i += 1
         j += 1
     i = 0
     j = 0
-    if arr2[0] == 0:
+    if len(arr2) == 0:
         while i < len(arr1) - 1:
             n1 = arr1[i] + k
             j = i + 1
@@ -316,7 +316,7 @@ def add_edge_parallel_2(g, node, inter_arr):
         node_connect = lowest_degree(g, 'S', node, node2, outside_node)
         g.add_edge(n1, node_connect)
 
-def add_edge_parallel_3(g, inter_arr):
+def add_edge_parallel_3(g, inter_arr, mode):
     i = 0
     j = 0
     n1 = n2 = n3 = n4 = ''
@@ -326,27 +326,42 @@ def add_edge_parallel_3(g, inter_arr):
     n2, n2_degree, i = lowest_degree_arr_node(g, 'S', i, inter_arr, '')
     n3, n3_degree, j = lowest_degree_arr_node(g, 'D', j, inter_arr, '')
     n4, n4_degree, j = lowest_degree_arr_node(g, 'D', j, inter_arr, '')
+    sel = 3
     if n1_degree + n2_degree < n3_degree + n4_degree :
-        sel = 0
-        g.add_edge(n1, n2)      #S->S
+        if checking_parallel_connected(g, 'S', inter_arr) == True and mode == 1:
+            sel = 0
+            g.add_edge(n1, n2)      #S->S
+        elif mode == 0:
+            sel = 0
+            g.add_edge(n1, n2)      #S->S
     else:
-        sel = 1
-        g.add_edge(n3, n4)      #D->D
+        if checking_parallel_connected(g, 'D', inter_arr) == True and mode == 1:
+            sel = 1
+            g.add_edge(n3, n4)      #D->D
+        elif mode == 0:
+            sel = 1
+            g.add_edge(n3, n4)      #D->D
     if sel == 1 :   #connect S -> S
         except_node = n4[0]
         node_connect, node_degree, t1 = lowest_degree_arr_node(g, 'S', t1, inter_arr, except_node)
         g.add_edge(n1, node_connect)
-    else:           #connect d->D
+    elif sel == 2:           #connect d->D
         except_node = n2[0]
         node_connect, node_degree, t1 = lowest_degree_arr_node(g, 'D', t1, inter_arr, except_node)
         g.add_edge(n3, node_connect)
     return
+
 def add_edge_serial_3(g, inter_arr, mode):
     i = 0
     n1, n1_degree, i = lowest_degree_arr_node(g, 'S', i, inter_arr, '')
     n2 , n2_degree, i = lowest_degree_arr_node(g, 'D', i, inter_arr, n1)
     if mode == 0:
         g.add_edge(n1, n2)
+        for node in g.nodes():
+            if (node, n1) in g.edges() and node[1] == 'S':
+                g.add_edge(node, n2)
+            if (node, n2) in g.edges() and node[1] == 'D':
+                g.add_edge(node, n1)
     elif mode == 1:
         if check_serial_connected(g, '', inter_arr) == True:
            g.add_edge(n1, n2) 
@@ -432,7 +447,7 @@ def create_graph(g, q, i, expression, mode):
             if len(node) > 0:
                 add_edge_parallel_2(g, node, inter_arr)
             else:
-                add_edge_parallel_3(g, inter_arr)
+                add_edge_parallel_3(g, inter_arr, mode)
         else:
             if len(node):
                 add_edge_serial_2(g, node, inter_arr, mode)
@@ -527,10 +542,21 @@ def find_hamilton_path(g, end_node):
         if path :
             break
         path = []
-    if len(path) > 0:
+    if path:
         return path
-    else: return None
-
+    else: 
+        for node in g.nodes():
+            if node[1] == 'D': continue
+            if end_node != '':
+                path = hamiltonian_dfs_endnode(g, node, end_node)
+                if path:
+                    if (path[0][0] != end_node and path[-1][0] != end_node):
+                        path = []
+            else:  path = hamiltonian_dfs(g, node)
+            if path :
+                break
+            path = []
+    return path
 def euler_path(g, end_node):
     euler_path_nmos = find_hamilton_path(g, end_node)
     if not euler_path_nmos:
@@ -574,11 +600,32 @@ def filter_edge_pmos(g, arr1, arr2, euler_path):
         if n3 != n4:
             node1 = n1 + n2
             node2 = n2 + n1
+            s = 0
             if (node1 in arr1 or node2 in arr1) and (node1 not in check_serial or node2 not in check_serial):
                 if (n1 + 'S', n2 + 'D') in g.edges:
                     g.remove_edge(n1 + 'S', n2 + 'D')
+                    s = 1
                 if (n1 + 'D', n2 + 'S') in g.edges:
                     g.remove_edge(n1 + 'D', n2 + 'S')
+                    s = 2
+                if s == 1:
+                    s = 0
+                    for node in g.nodes():
+                        if (node, n2 + 'D') in g.edges() and node[1] == 'S':
+                            g.add_edge(n1 + 'S', node[0] + 'D')
+                            break
+                        if (node, n1 + 'D') in g.edges() and node[1] == 'S':
+                            g.add_edge(n2 + 'S', node[0] + 'D')
+                            break
+                elif s == 2:
+                    s = 0
+                    for node in g.nodes():
+                        if (node, n2 + 'S') in g.edges() and node[1] == 'D':
+                            g.add_edge(n1 + 'D', node[0] + 'S')
+                            break
+                        if (node, n1 + 'S') in g.edges() and node[1] == 'D':
+                            g.add_edge(n2 + 'D', node[0] + 'S')
+                            break
         else:
             node1 = n1 + n2
             node2 = n2 + n1
@@ -613,7 +660,10 @@ def find_node_source_and_out(g):
             else:
                 out_nodes.append((edge[0][0], edge[1][0]))
     if len(source_nodes) > 0:
+        temp1 = []
         for pair in source_nodes:
+            temp1.append(pair)
+        for pair in temp1:
             n1 = pair[0]
             n2 = pair[1]
             n1_s = n1 + 'S'
@@ -635,8 +685,10 @@ def find_node_source_and_out(g):
                 i += 1
             source_nodes = temp1
     if len(out_nodes) > 0:
-        
+        temp2 = []
         for pair in out_nodes:
+            temp2.append(pair)
+        for pair in temp2:
 
             n1 = pair[0]
             n2 = pair[1]
@@ -724,9 +776,12 @@ def Create_All(expression):
     euler_path_nmos, euler_path_pmos = euler_path(g_nmos, node)
     g_pmos = create_pmos(g_pmos, expression, euler_path_pmos)
     g_pmos = filter_edge_pmos(g_pmos, serial_array_pmos, parallel_array_pmos, euler_path_pmos)
+    #g_pmos.add_edge('AS', 'ED')
     source_nodes_pmos, out_nodes_pmos = find_node_source_and_out(g_pmos);
     return g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos
 
+expression = "A*(B+C)+D*E"
+g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos = Create_All(expression)
 
 # Test the function
 #Test expression:

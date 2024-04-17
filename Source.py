@@ -1,7 +1,7 @@
 from expression_euler_path import *
 from draw_stick_diagram import *
 
-expression = "A+B+C"
+expression = "A*(B+C)+D*E"
 g_nmos, g_pmos, euler_path_nmos, euler_path_pmos, source_nodes_nmos, out_nodes_nmos,source_nodes_pmos, out_nodes_pmos = Create_All(expression)
 logic_elements = []
 seen = set()
