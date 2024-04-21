@@ -115,12 +115,18 @@ def draw_stick_diagram(g_nmos, g_pmos, euler_path_nmos,euler_path_pmos,source_no
                             vdd_already_connected.append(x1)
                             continue
                 else:
-                    ax.plot([x1,x1],[5,6],'b', linewidth=1)
-                    ax.scatter(x1, y1, color='blue', marker='x', s=50)
-                    ax.plot([x2,x2],[5,6],'b', linewidth=1)
-                    ax.scatter(x2, y2, color='blue', marker='x', s=50)
-                    vdd_already_connected.append(x1)
-                    vdd_already_connected.append(x2)
+                    if (x1,x2) in connected_pmos or (x2,x1) in connected_pmos:
+                        ax.plot([x1,x1],[5,6],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='blue', marker='x', s=50)
+                        vdd_already_connected.append(x1)
+                        vdd_already_connected.append(x2)
+                    else:
+                        ax.plot([x1,x1],[5,6],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='blue', marker='x', s=50)
+                        ax.plot([x2,x2],[5,6],'b', linewidth=1)
+                        ax.scatter(x2, y2, color='blue', marker='x', s=50)
+                        vdd_already_connected.append(x1)
+                        vdd_already_connected.append(x2)
     else:    
         for node in source_nodes_pmos:
             x1,y1 = coordinates_pmos[node]
@@ -168,12 +174,18 @@ def draw_stick_diagram(g_nmos, g_pmos, euler_path_nmos,euler_path_pmos,source_no
                             gnd_already_connected.append(x1)
                             continue 
                 else:
-                    ax.plot([x1,x1],[0,-1],'b', linewidth=1)
-                    ax.scatter(x1, y1, color='black', marker='x', s=50)
-                    ax.plot([x2,x2],[0,-1],'b', linewidth=1)
-                    ax.scatter(x2, y2, color='black', marker='x', s=50)
-                    gnd_already_connected.append(x1)
-                    gnd_already_connected.append(x2)
+                    if (x1,x2) in connected_nmos or (x2,x1) in connected_nmos:
+                        ax.plot([x1,x1],[0,-1],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        gnd_already_connected.append(x1)
+                        gnd_already_connected.append(x2)
+                    else:
+                        ax.plot([x1,x1],[0,-1],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        ax.plot([x2,x2],[0,-1],'b', linewidth=1)
+                        ax.scatter(x2, y2, color='black', marker='x', s=50)
+                        gnd_already_connected.append(x1)
+                        gnd_already_connected.append(x2)
     else: 
         for node in source_nodes_nmos:
             x1,y1 = coordinates_nmos[node]
@@ -200,7 +212,7 @@ def draw_stick_diagram(g_nmos, g_pmos, euler_path_nmos,euler_path_pmos,source_no
             else:
                 if x1 in out_pmos_already_connected or x2 in out_pmos_already_connected:
                     if (x1,x2) in connected_pmos or (x2,x1) in connected_pmos:
-                        pass
+                        continue
                     else:
                         if(x1 in out_pmos_already_connected and x2 in out_pmos_already_connected):
                             continue
@@ -225,14 +237,21 @@ def draw_stick_diagram(g_nmos, g_pmos, euler_path_nmos,euler_path_pmos,source_no
                             out_pmos_already_connected.append(x1)
                             continue
                 else:
-                    ax.plot([x1,x1],[y1-2.5,y1],'b', linewidth=1)
-                    ax.plot([x1,12],[y1-2.5,2.5],'b', linewidth=1)
-                    ax.scatter(x1, y1, color='black', marker='x', s=50)
-                    ax.plot([x2,x2],[y2-2.5,y2],'b', linewidth=1)
-                    ax.plot([x2,12],[y2-2.5,2.5],'b', linewidth=1)
-                    ax.scatter(x2, y2, color='black', marker='x', s=50)
-                    out_pmos_already_connected.append(x1)
-                    out_pmos_already_connected.append(x2)
+                    if (x1,x2) in connected_pmos or (x2,x1) in connected_pmos:
+                        ax.plot([x1,x1],[y1-2.5,y1],'b', linewidth=1)
+                        ax.plot([x1,12],[y1-2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        out_pmos_already_connected.append(x1)
+                        out_pmos_already_connected.append(x2)
+                    else:
+                        ax.plot([x1,x1],[y1-2.5,y1],'b', linewidth=1)
+                        ax.plot([x1,12],[y1-2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        ax.plot([x2,x2],[y2-2.5,y2],'b', linewidth=1)
+                        ax.plot([x2,12],[y2-2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x2, y2, color='black', marker='x', s=50)
+                        out_pmos_already_connected.append(x1)
+                        out_pmos_already_connected.append(x2)
     else: 
         for node_pmos in out_nodes_pmos:
             x1,y1 = coordinates_pmos[node_pmos]
@@ -284,14 +303,21 @@ def draw_stick_diagram(g_nmos, g_pmos, euler_path_nmos,euler_path_pmos,source_no
                             out_nmos_already_connected.append(x1)
                             continue
                 else:
-                    ax.plot([x1,x1],[y1+2.5,y1],'b', linewidth=1)
-                    ax.plot([x1,12],[y1+2.5,2.5],'b', linewidth=1)
-                    ax.scatter(x1, y1, color='black', marker='x', s=50)
-                    ax.plot([x2,x2],[y2+2.5,y2],'b', linewidth=1)
-                    ax.plot([x2,12],[y2+2.5,2.5],'b', linewidth=1)
-                    ax.scatter(x2, y2, color='black', marker='x', s=50)
-                    out_nmos_already_connected.append(x1)
-                    out_nmos_already_connected.append(x2)
+                    if (x1,x2) in connected_nmos or (x2,x1) in connected_nmos:
+                        ax.plot([x1,x1],[y1+2.5,y1],'b', linewidth=1)
+                        ax.plot([x1,12],[y1+2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        out_nmos_already_connected.append(x1)
+                        out_nmos_already_connected.append(x2)
+                    else:
+                        ax.plot([x2,x2],[y2+2.5,y2],'b', linewidth=1)
+                        ax.plot([x2,12],[y2+2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x2, y2, color='black', marker='x', s=50)
+                        ax.plot([x1,x1],[y1+2.5,y1],'b', linewidth=1)
+                        ax.plot([x1,12],[y1+2.5,2.5],'b', linewidth=1)
+                        ax.scatter(x1, y1, color='black', marker='x', s=50)
+                        out_nmos_already_connected.append(x1)
+                        out_nmos_already_connected.append(x2)
     else: 
         for node_nmos in out_nodes_nmos:
             x1,y1 = coordinates_nmos[node_nmos]
