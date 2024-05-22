@@ -10,6 +10,6 @@ This is a simple tool that can convert an inverted boolean expression to stick d
 
 # Example
 
-**Input**: \( (A+B)' \)
+**Input**: $(A+B)$
 
 **Output**: 
