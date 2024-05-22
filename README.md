@@ -20,7 +20,7 @@ This is a simple tool that can convert an inverted boolean expression to stick d
 
 - The input has to be clear and optimal.
 - There should not have duplicated input variable.
-- Number of input variable is unlimited and larger than 1, but for a suitable result, it should be in range 2 - 4.
+- Number of input variable is unlimited and larger than 1, but for a resonable result, it should be in range 2 - 4.
 
 
 
