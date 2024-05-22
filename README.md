@@ -13,3 +13,14 @@ This is a simple tool that can convert an inverted boolean expression to stick d
 **Input**: $(A+B)$
 
 **Output**: 
+
+![example](Demo/result_1.png)
+
+# Note
+
+- The input has to be clear and optimal.
+- There should not have duplicated input variable.
+- Number of input variable is unlimited and larger than 1, but for a suitable result, it should be in range 2 - 4.
+
+
+
