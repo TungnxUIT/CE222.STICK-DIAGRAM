@@ -12,7 +12,7 @@ This is a simple tool that can convert an inverted boolean expression to stick d
 
 **Input**: $(A+B)$
 
-**Output**: 
+**Output**: Stick Diagram of Input Expression.
 
 ![example](Demo/result_1.png)
 
